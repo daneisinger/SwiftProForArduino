@@ -5,7 +5,8 @@
 #include "uarm_coord_convert.h"
 #include "uarm_angle.h"
 #include "uarm_swift.h"
-
+#include "uarm_grove_common.h"
+#include "uarm_grove_manage.h"
 
 struct cmd_pack_t {
 	char line[CMD_BUFFER_SIZE];
@@ -866,6 +867,96 @@ static bool uarm_cmd_m2241(char *payload){
 	return true;	
 }
 
+
+/* -------------------- GROVE MODULE SUPPORT ------------------------ */
+
+static bool uarm_cmd_m2304(char *payload) {
+    uint8_t rtn = 0;
+    int port;
+    if (rtn = sscanf(payload, "P%d", &port) < 1) {
+        DB_PRINT_STR("sscanf %d\r\n", rtn);
+        return false;
+    } else if (NOT_GROVE_PORT(port)) {
+        DB_PRINT_STR("Invalid Grove port: %d\r\n", port);
+        return false;
+    }
+
+    deinitGroveModule(port);
+    return true;
+}
+
+static bool uarm_cmd_m2305(char *payload) {
+    uint8_t rtn = 0;
+    int port, grove_type;
+    if (rtn = sscanf(payload, "P%dN%d", &port, &grove_type) < 2) {
+        DB_PRINT_STR("sscanf %d\r\n", rtn);
+        return false;
+    } else if (NOT_GROVE_PORT(port)) {
+        DB_PRINT_STR("Invalid Grove port: %d\r\n", port);
+        return false;
+    }
+
+    return initGroveModule(port, grove_type);
+}
+
+static bool uarm_cmd_m2306(char *payload) {
+    uint8_t rtn = 0;
+    int port, value;
+    if (rtn = sscanf(payload, "P%dV%d", &port, &value) < 2) {
+        DB_PRINT_STR("sscanf %d\r\n", rtn);
+        return false;
+    } else if (NOT_GROVE_PORT(port)) {
+        DB_PRINT_STR("Invalid Grove port: %d\r\n", port);
+        return false;
+    }
+
+    DB_PRINT_STR("Set Grove port %d report interval to %d\r\n", port, value);
+    return true;
+}
+
+static bool uarm_cmd_m2307(char *payload) {
+    uint8_t rtn = 0;
+    int port;
+    GroveData_t data;
+
+    if (rtn = sscanf(payload, "P%d", &port) < 1 || NOT_GROVE_PORT(port)) {
+        DB_PRINT_STR("Invalid Grove port: %d\r\n", port);
+        return false;
+    }
+
+    DB_PRINT_STR("Change settings for Grove port %d\r\n", port);
+
+    if (rtn = sscanf(payload, "P%dV%dR%huG%huB%hu", &port, &data.i, &data.r, &data.g, &data.b) == 5) {
+        DB_PRINT_STR("Got LED RGB data\r\n");
+        data.dataType = GROVE_LED_RGB;
+
+    } else if (rtn = sscanf(payload, "P%dV%dS%s", &port, &data.i, &data.s) == 3) {
+        DB_PRINT_STR("Got LCD row & text data\r\n");
+        data.dataType = GROVE_LCD_VALUE;
+
+    } else if (rtn = sscanf(payload, "P%dV%d", &port, &data.i) == 2) {
+        DB_PRINT_STR("Got integer data\r\n");
+        data.dataType = GROVE_INT;
+
+    } else if (rtn = sscanf(payload, "P%dR%huG%huB%hu", &port, &data.r, &data.g, &data.b) == 4) {
+        DB_PRINT_STR("Got LCD RGB data\r\n");
+        data.dataType = GROVE_LCD_RGB;
+
+    } else if (rtn = sscanf(payload, "P%dT%d", &port, &data.i) == 2) {
+        DB_PRINT_STR("Got LCD state data\r\n");
+        data.dataType = GROVE_LCD_STATE;
+
+    } else {
+        DB_PRINT_STR("Invalid data provided\r\n");
+        return false;
+    }
+
+    return controlGroveModule(port, data);
+}
+
+/* -------------------- END GROVE MODULE SUPPORT ------------------------ */
+
+
 static void uarm_cmd_m2400(uint8_t param){	// <! set work mode
 	switch(param){
 		case WORK_MODE_NORMAL:				// <! nomal mode
@@ -1138,18 +1229,42 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 		case 2245:
 			//DB_PRINT_STR( "M2245\r\n" );
 			break;
+
+		/* -------------------- GROVE MODULE SUPPORT ------------------------ */
 		case 2304:
-			//DB_PRINT_STR( "M2304\r\n" );
-			break;
+			DB_PRINT_STR( "M2304\r\n" );
+            if( uarm_cmd_m2304(line) == true ){
+                return UARM_CMD_OK;
+            }else{
+                return UARM_CMD_ERROR;
+            }
+            break;
 		case 2305:
-			//DB_PRINT_STR( "M2305\r\n" );
+			DB_PRINT_STR( "M2305\r\n" );
+            if( uarm_cmd_m2305(line) == true ){
+                return UARM_CMD_OK;
+            }else{
+                return UARM_CMD_ERROR;
+            }
 			break;
 		case 2306:
-			//DB_PRINT_STR( "M2306\r\n" );
+			DB_PRINT_STR( "M2306\r\n" );
+            if( uarm_cmd_m2306(line) == true ){
+                return UARM_CMD_OK;
+            }else{
+                return UARM_CMD_ERROR;
+            }
 			break;
 		case 2307:
-			//DB_PRINT_STR( "M2307\r\n" );
-			break;	
+			DB_PRINT_STR( "M2307\r\n" );
+            if( uarm_cmd_m2307(line) == true ){
+                return UARM_CMD_OK;
+            }else{
+                return UARM_CMD_ERROR;
+            }
+			break;
+        /* -------------------- END GROVE MODULE SUPPORT ------------------------ */
+
 		case 2400:
 								if( (line[0]=='S') && (line[1]>='0'&&line[1]<='7') ){
 									uarm_cmd_m2400( line[1]-'0' );
@@ -1171,7 +1286,8 @@ enum uarm_protocol_e uarm_execute_m_cmd(uint16_t cmd, char *line, uint8_t *char_
 								}else{
 									return UARM_CMD_ERROR;
 								} 
-			break;
+			break;
+
 		case 2412:
 								if( uarm_cmd_m2412(line) == true ){
 									return UARM_CMD_OK;
