@@ -4,18 +4,16 @@
 
 #include "uarm_grove_manage.h"
 
-#define PORT_NUM_MAX	14
-
 uint16_t PortMask[GROVE_TYPE_COUNT] = {
         0,
         0x38,	//GROVE_CHAINABLE_LED
         0x38,	//GROVE_BUTTON
-        6,		//GROVE_SLIDING_POTENTIOMETER
+        0x2006,	//GROVE_SLIDING_POTENTIOMETER
         0x338,	//GROVE_VIBRATION_MOTOR
-        0x6,	//GROVE_LIGHT_SENSOR
-        0x6,	//GROVE_ANGLE_SENSOR
-        0x6,	//GROVE_AIR_QUALITY_SENSOR
-        0x6,	//GROVE_SOUND_SENSOR
+        0x2006,	//GROVE_LIGHT_SENSOR
+        0x2006,	//GROVE_ANGLE_SENSOR
+        0x2006,	//GROVE_AIR_QUALITY_SENSOR
+        0x2006,	//GROVE_SOUND_SENSOR
         1,		//GROVE_6AXIS_SENSOR
         1,		//GROVE_COLOR_SENSOR
         1,		//GROVE_GESTURE_SERSOR
@@ -27,21 +25,21 @@ uint16_t PortMask[GROVE_TYPE_COUNT] = {
         1,		//GROVE_RGBLCD
         0x338,	//GROVE_LINE_FINDER
         0x338,	//GROVE_IR_DISTANCE
-        0x6,	//GROVE_EMG_DETECTOR
+        0x2006,	//GROVE_EMG_DETECTOR
         1		//GROVE_OLED12864
 };
 
-GroveModule_t* pModule[PORT_NUM_MAX] = {NULL};
-
+GroveModule_t* pModule[GROVE_PORT_NUM_MAX] = {NULL};
+GroveReport_t groveReport[GROVE_PORT_NUM_MAX] = {0};
 
 bool initGroveModule(uint8_t portNum, GroveType_t type)
 {
     DB_PRINT_STR("Init Grove port %d with Grove type %d\r\n", portNum, type);
 
     // Validate port, type and port-type combo
-    if (portNum > PORT_NUM_MAX - 1)
+    if (portNum > GROVE_PORT_NUM_MAX - 1)
     {
-        DB_PRINT_STR("Port num should be less than %d\r\n", PORT_NUM_MAX);
+        DB_PRINT_STR("Port num should be less than %d\r\n", GROVE_PORT_NUM_MAX);
         return false;
     }
 
@@ -69,6 +67,9 @@ bool initGroveModule(uint8_t portNum, GroveType_t type)
     {
         case GROVE_ELECTROMAGNET:
             pModule[portNum] = newGroveElectromagnet();
+            break;
+        case GROVE_ANGLE_SENSOR:
+            pModule[portNum] = newGroveAngleSensor();
             break;
         default:
             DB_PRINT_STR("Module %d not implemented.\r\n", type);
@@ -100,7 +101,7 @@ void deinitGroveModule(uint8_t portNum)
 {
     DB_PRINT_STR("De-init Grove port %d\r\n", portNum);
 
-    if (portNum > PORT_NUM_MAX - 1)
+    if (portNum > GROVE_PORT_NUM_MAX - 1)
     {
         return;
     }
@@ -118,7 +119,7 @@ bool controlGroveModule(uint8_t portNum, GroveData_t data)
 {
     DB_PRINT_STR("Control Grove port %d\r\n", portNum);
 
-    if (portNum > PORT_NUM_MAX - 1)
+    if (portNum > GROVE_PORT_NUM_MAX - 1)
     {
         return false;
     }
@@ -131,3 +132,65 @@ bool controlGroveModule(uint8_t portNum, GroveData_t data)
     DB_PRINT_STR("Grove port not initialized\r\n");
     return false;
 }
+
+bool setGroveModuleReportInterval(uint8_t portNum, long interval)
+{
+    if (portNum > GROVE_PORT_NUM_MAX - 1)
+    {
+        DB_PRINT_STR("Port num should be less than %d\r\n", GROVE_PORT_NUM_MAX);
+        return false;
+    }
+
+    if (pModule[portNum] == NULL)
+    {
+        DB_PRINT_STR("Port %d not initialized\r\n", portNum);
+        return false;
+    }
+
+    if (interval <= 0)
+    {
+        groveReport[portNum].interval = 0;
+        return true;
+    }
+
+    if (getGroveMillis() == 0) {
+        time3_set(0.001, incGroveMillis);
+        time3_start();
+    }
+
+    groveReport[portNum].interval = interval;
+    groveReport[portNum].timestamp = getGroveMillis();
+    return true;
+}
+
+void GroveReportRun()
+{
+    for (int i = 0; i < GROVE_PORT_NUM_MAX; i++)
+    {
+        long curTimeStamp = getGroveMillis();
+
+        // exist
+        if (groveReport[i].interval != 0)
+        {
+            if((unsigned long)(curTimeStamp - groveReport[i].timestamp) >= groveReport[i].interval)
+            {
+                groveReport[i].timestamp = curTimeStamp;
+
+                if (pModule[i] != NULL)
+                {
+                    pModule[i]->report(pModule[i]);
+                }
+            }
+        }
+    }
+}
+
+void GroveTick()
+{
+    for (int i = 0; i < GROVE_PORT_NUM_MAX; i++)
+    {
+        if (pModule[i] != NULL)
+            pModule[i]->tick(pModule[i]);
+    }
+}
+

@@ -479,14 +479,14 @@ static int adc_read_value(uint8_t pin){
 }
 
 
-static int getAnalogPinValue(unsigned int pin)
+int getAnalogPinValue(unsigned int pin)
 {
 	unsigned int dat[8];
 
 
 	for(int i = 0; i < 8; i++)
 	{
-		dat[i] = adc_read_value(pin);
+		dat[i] = analogRead(pin);
 	}
 
 	_sort(dat, 8);

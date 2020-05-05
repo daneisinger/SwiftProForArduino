@@ -40,6 +40,8 @@ void write_sn_num(void);
 void cycle_report_coord(void);
 void read_hardware_version(void);
 
+int getAnalogPinValue(unsigned int pin);
+
 void pump_on(void);
 void pump_off(void);
 void pump_tick(void);

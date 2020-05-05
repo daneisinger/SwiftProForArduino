@@ -911,7 +911,7 @@ static bool uarm_cmd_m2306(char *payload) {
     }
 
     DB_PRINT_STR("Set Grove port %d report interval to %d\r\n", port, value);
-    return true;
+    return setGroveModuleReportInterval(port, value);
 }
 
 static bool uarm_cmd_m2307(char *payload) {

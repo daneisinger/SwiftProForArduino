@@ -8,7 +8,7 @@ bool groveElectromagnetInit(GroveModule_t* self, uint8_t portNum)
 {
     DB_PRINT_STR("Initialize module port\r\n");
     self->_portNum = portNum;
-
+    self->_clkPin = getGrovePortClkPin(portNum);
     return true;
 }
 
@@ -24,28 +24,12 @@ bool groveElectromagnetControl(GroveModule_t* self, GroveData_t data)
     if (data.dataType == GROVE_INT) {
         if (data.i) {
             DB_PRINT_STR("Turning electromagnet on...\r\n");
-            switch (self->_portNum) {
-                CASE_PORT_WRITE_CLK(3, 1);
-                CASE_PORT_WRITE_CLK(4, 1);
-                CASE_PORT_WRITE_CLK(5, 1);
-                CASE_PORT_WRITE_CLK(8, 1);
-                CASE_PORT_WRITE_CLK(9, 1);
-                default:
-                    DB_PRINT_STR("Unupported pin for module.");
-                    return false;
-            }
+            pinMode(self->_clkPin, OUTPUT);
+            digitalWrite(self->_clkPin, HIGH);
         } else {
             DB_PRINT_STR("Turning electromagnet off...\r\n");
-            switch (self->_portNum) {
-                CASE_PORT_WRITE_CLK(3, 0);
-                CASE_PORT_WRITE_CLK(4, 0);
-                CASE_PORT_WRITE_CLK(5, 0);
-                CASE_PORT_WRITE_CLK(8, 0);
-                CASE_PORT_WRITE_CLK(9, 0);
-                default:
-                    DB_PRINT_STR("Unupported pin for module.");
-                    return false;
-            }
+            pinMode(self->_clkPin, OUTPUT);
+            digitalWrite(self->_clkPin, LOW);
         }
         return true;
     }

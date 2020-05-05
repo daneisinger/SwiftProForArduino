@@ -3,6 +3,7 @@
 
 
 #include "uarm_common.h"
+#include "uarm_grove_manage.h"
 
 #if defined(UARM_MINI)
 	#define DEVICE_NAME						"SwiftPro mini"

@@ -39,6 +39,9 @@ void uarm_swift_tick_run(void){
 //	swift_buzzer.tick();
 
 	pump_tick();
+
+    GroveReportRun();
+    GroveTick();
 }
 
 

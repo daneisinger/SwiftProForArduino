@@ -6,7 +6,8 @@
 #define _UARM_GROVE_COMMON_H
 
 #include "uarm_common.h"
-#include "fastio.h"
+
+#define GROVE_PORT_NUM_MAX	14
 
 #define GROVE_PORT0_CLK 0
 #define GROVE_PORT0_DAT 0
@@ -34,9 +35,6 @@
 
 #define GROVE_PORT13_CLK 13
 #define GROVE_PORT13_DAT 0xff
-
-#define CASE_PORT_WRITE_CLK(port, value) case port: OUT_WRITE(GROVE_PORT ## port ## _CLK, value); break;
-#define CASE_PORT_WRITE_DAT(port, value) case port: OUT_WRITE(GROVE_PORT ## port ## _DAT, value); break;
 
 #define NOT_GROVE_PORT(port) (port<0 || (port>5 && port<8) || (port>9 && port<13) || port>13)
 
@@ -91,6 +89,14 @@ typedef struct GroveData {
     char *s;
 } GroveData_t;
 
+typedef struct GroveReport
+{
+    long interval;
+    long timestamp;
+} GroveReport_t;
+
+#define REPORT_TYPE_GROVE2    11
+
 
 struct GroveModule {
     bool (*init)(struct GroveModule* self, uint8_t portNum);
@@ -99,13 +105,19 @@ struct GroveModule {
     void (*tick)(struct GroveModule* self);
 
     GroveType_t _moduleType;
-    uint8_t _portNum, _clk_pin, _dat_pin;
+    uint8_t _portNum, _clkPin, _datPin;
 };
 typedef struct GroveModule GroveModule_t;
 
+uint8_t getGrovePortClkPin(uint8_t portNum);
+uint8_t getGrovePortDatPin(uint8_t portNum);
 
 GroveModule_t* newGroveModule(GroveType_t moduleType);
 void delGroveModule(GroveModule_t* module);
+
+void incGroveMillis();
+long getGroveMillis();
+
 
 
 #endif //_UARM_GROVE_COMMON_H
