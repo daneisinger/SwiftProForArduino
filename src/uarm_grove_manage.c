@@ -71,6 +71,12 @@ bool initGroveModule(uint8_t portNum, GroveType_t type)
         case GROVE_ANGLE_SENSOR:
             pModule[portNum] = newGroveAngleSensor();
             break;
+        case GROVE_TEMPERATURE_HUMIDITY_SENSOR:
+            pModule[portNum] = newGroveTHSensor();
+            break;
+        case GROVE_COLOR_SENSOR:
+            pModule[portNum] = newGroveColorSensor();
+            break;
         default:
             DB_PRINT_STR("Module %d not implemented.\r\n", type);
             break;

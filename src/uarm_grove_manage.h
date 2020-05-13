@@ -8,6 +8,8 @@
 #include "uarm_grove_common.h"
 #include "uarm_grove_electromagnet.h"
 #include "uarm_grove_angle_sensor.h"
+#include "uarm_grove_color_sensor.h"
+#include "uarm_grove_th_sensor.h"
 
 bool initGroveModule(uint8_t portNum, GroveType_t type);
 void deinitGroveModule(uint8_t portNum);
